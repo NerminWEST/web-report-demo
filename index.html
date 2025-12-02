@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MARINA Plus: YOLOv8 Fish Detection</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+
+    <!-- Theme Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#fdfcf8',  /* Warm/Paper white */
+                            100: '#f4f1ea',
+                            200: '#e6e0d2',
+                            300: '#d5cbb0',
+                            400: '#bfb08a',
+                            500: '#a69668',
+                            600: '#8c7b52',
+                            700: '#736342',
+                            800: '#5c4e36',
+                            900: '#463b2a',
+                        },
+                        accent: {
+                            blue: '#4a7c8f',
+                            green: '#5e8c61',
+                            red: '#b85c5c'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Lora', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Custom Styles for Chart Containers and Specific Layouts -->
+    <style>
+        body {
+            background-color: #fdfcf8; /* Brand 50 */
+            color: #463b2a; /* Brand 900 */
+        }
+
+        /* Chart Container Strict Styling */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px; /* Max width constraint */
+            height: 350px;    /* Default height */
+            max-height: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        @media (max-width: 640px) {
+            .chart-container {
+                height: 300px;
+            }
+        }
+
+        /* Interactive Pipeline Box Styling */
+        .pipeline-step {
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border-left: 4px solid transparent;
+        }
+        .pipeline-step.active {
+            background-color: #f4f1ea; /* Brand 100 */
+            border-left-color: #a69668; /* Brand 500 */
+            transform: translateX(5px);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #fdfcf8; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d5cbb0; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #bfb08a; 
+        }
+    </style>
+</head>
+<body class="font-sans antialiased leading-relaxed">
+    
+    <!-- Navigation -->
+    <nav class="sticky top-0 z-50 bg-brand-50/90 backdrop-blur-md border-b border-brand-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-fish text-accent-blue text-2xl"></i>
+                    <span class="font-serif font-bold text-xl text-brand-800 tracking-tight">MARINA <span class="text-brand-500">Plus</span></span>
+                </div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <button onclick="scrollToSection('overview')" class="text-brand-600 hover:text-brand-900 font-medium transition">Overview</button>
+                    <button onclick="scrollToSection('pipeline')" class="text-brand-600 hover:text-brand-900 font-medium transition">Pipeline</button>
+                    <button onclick="scrollToSection('config')" class="text-brand-600 hover:text-brand-900 font-medium transition">Configuration</button>
+                    <button onclick="scrollToSection('results')" class="text-brand-600 hover:text-brand-900 font-medium transition">Results</button>
+                    <!-- NEW NAVIGATION LINK -->
+                    <button onclick="scrollToSection('edge-ai')" class="text-brand-600 hover:text-brand-900 font-medium transition">Edge AI</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header id="overview" class="relative overflow-hidden pt-16 pb-24">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="text-center max-w-3xl mx-auto">
+                <div class="inline-flex items-center px-3 py-1 rounded-full bg-accent-blue/10 text-accent-blue text-sm font-semibold mb-6">
+                    <i class="fa-solid fa-bolt mr-2"></i> Solution v1.0
+                </div>
+                <h1 class="text-4xl md:text-5xl font-serif font-bold text-brand-900 mb-6 leading-tight">
+                    The  YOLOv8 <br/>Fish Detection Pipeline
+                </h1>
+                <p class="text-xl text-brand-600 mb-10 leading-relaxed">
+                    A comprehensive solution for converting nested Kaggle-style datasets into optimized YOLO format. 
+                    From raw subfolders to a trained object detection model in a single execution.
+                </p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-left mt-12">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-brand-100 hover:shadow-md transition">
+                        <div class="w-12 h-12 bg-red-50 rounded-lg flex items-center justify-center mb-4 text-accent-red">
+                            <i class="fa-solid fa-folder-tree text-xl"></i>
+                        </div>
+                        <h3 class="font-bold text-brand-800 mb-2">The Challenge</h3>
+                        <p class="text-sm text-brand-600">Complex Kaggle structure with separate <code>fish_image</code> and <code>mask_image</code> roots containing dozens of subfolders.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-brand-100 hover:shadow-md transition">
+                        <div class="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center mb-4 text-accent-green">
+                            <i class="fa-solid fa-magic text-xl"></i>
+                        </div>
+                        <h3 class="font-bold text-brand-800 mb-2">The Solution</h3>
+                        <p class="text-sm text-brand-600">Custom <code>SmartConverter</code> class that auto-maps folders, extracts bounding boxes from binary masks, and normalizes coordinates.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-brand-100 hover:shadow-md transition">
+                        <div class="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center mb-4 text-accent-blue">
+                            <i class="fa-solid fa-rocket text-xl"></i>
+                        </div>
+                        <h3 class="font-bold text-brand-800 mb-2">The Result</h3>
+                        <p class="text-sm text-brand-600">A trained YOLOv8 model (`best.pt`) ready for inference, saved persistently to Google Drive.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Background Decor -->
+        <div class="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
+            <div class="absolute top-[-10%] right-[-5%] w-96 h-96 bg-brand-200 rounded-full mix-blend-multiply filter blur-3xl opacity-50"></div>
+            <div class="absolute bottom-[-10%] left-[-5%] w-96 h-96 bg-accent-blue/20 rounded-full mix-blend-multiply filter blur-3xl opacity-50"></div>
+        </div>
+    </header>
+
+    <!-- Pipeline Explorer Section -->
+    <section id="pipeline" class="py-20 bg-white border-t border-brand-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="mb-12">
+                <h2 class="text-3xl font-serif font-bold text-brand-900 mb-4">How the SmartConverter Works</h2>
+                <p class="text-brand-600 max-w-2xl">
+                    The core innovation of this solution is the logic that bridges the gap between raw nested data and YOLO requirements. Click the steps below to explore the process.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <!-- Step List -->
+                <div class="lg:col-span-4 space-y-4">
+                    <div class="pipeline-step active p-4 rounded-lg bg-brand-50 border border-brand-200" onclick="updatePipeline(0)">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-brand-800">1. Raw Data Ingestion</h3>
+                            <i class="fa-solid fa-database text-brand-400"></i>
+                        </div>
+                        <p class="text-xs text-brand-500 mt-1">Analyzing Drive Structure</p>
+                    </div>
+                    <div class="pipeline-step p-4 rounded-lg bg-white border border-brand-100" onclick="updatePipeline(1)">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-brand-800">2. Smart Pairing</h3>
+                            <i class="fa-solid fa-link text-brand-400"></i>
+                        </div>
+                        <p class="text-xs text-brand-500 mt-1">Matching subfolders</p>
+                    </div>
+                    <div class="pipeline-step p-4 rounded-lg bg-white border border-brand-100" onclick="updatePipeline(2)">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-brand-800">3. Mask Processing</h3>
+                            <i class="fa-solid fa-crop-simple text-brand-400"></i>
+                        </div>
+                        <p class="text-xs text-brand-500 mt-1">Binary to BBox</p>
+                    </div>
+                    <div class="pipeline-step p-4 rounded-lg bg-white border border-brand-100" onclick="updatePipeline(3)">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-brand-800">4. YOLO Formatting</h3>
+                            <i class="fa-solid fa-file-export text-brand-400"></i>
+                        </div>
+                        <p class="text-xs text-brand-500 mt-1">Normalization & Split</p>
+                    </div>
+                </div>
+
+                <!-- Step Detail View -->
+                <div class="lg:col-span-8">
+                    <div class="bg-brand-50 rounded-2xl p-8 border border-brand-200 h-full flex flex-col justify-center relative overflow-hidden">
+                        
+                        <!-- Content for Step 0 -->
+                        <div id="pipeline-content-0" class="pipeline-detail transition-opacity duration-300">
+                            <div class="inline-flex items-center px-3 py-1 rounded-full bg-brand-200 text-brand-800 text-xs font-bold mb-4">Ingestion</div>
+                            <h3 class="text-2xl font-bold text-brand-900 mb-4">Navigating Nested Chaos</h3>
+                            <p class="text-brand-700 mb-6">
+                                The script locates the dataset at <code>/content/drive/MyDrive/kaggle_fish_dataset/</code>. It identifies two root directories: <code>fish_image</code> and <code>mask_image</code>, each containing N matching subfolders (e.g., <code>fish_01</code>, <code>fish_02</code>...).
+                            </p>
+                            <div class="bg-white p-4 rounded-lg border border-brand-200 font-mono text-xs text-brand-600">
+                                ├── fish_image/ <br>
+                                │   ├── fish_01/ (img1.png, img2.png...) <br>
+                                │   └── ... <br>
+                                └── mask_image/ <br>
+                                &nbsp;&nbsp;&nbsp;&nbsp;├── mask_01/ (mask1.png, mask2.png...) <br>
+                                &nbsp;&nbsp;&nbsp;&nbsp;└── ...
+                            </div>
+                        </div>
+
+                        <!-- Content for Step 1 -->
+                        <div id="pipeline-content-1" class="pipeline-detail hidden opacity-0 transition-opacity duration-300">
+                            <div class="inline-flex items-center px-3 py-1 rounded-full bg-accent-blue/20 text-accent-blue text-xs font-bold mb-4">Logic Core</div>
+                            <h3 class="text-2xl font-bold text-brand-900 mb-4">Subfolder Mapping Logic</h3>
+                            <p class="text-brand-700 mb-6">
+                                The files don't share identical names. The converter solves this by matching parent folders. It programmatically maps <code>fish_XX</code> to <code>mask_XX</code>.
+                            </p>
+                            <div class="bg-white p-4 rounded-lg border border-brand-200">
+                                <div class="flex items-center justify-between text-sm">
+                                    <div class="bg-red-50 text-red-700 px-3 py-2 rounded">fish_image/fish_05/img_123.png</div>
+                                    <i class="fa-solid fa-arrow-right text-brand-400"></i>
+                                    <div class="bg-green-50 text-green-700 px-3 py-2 rounded">mask_image/mask_05/mask_123.png</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Content for Step 2 -->
+                        <div id="pipeline-content-2" class="pipeline-detail hidden opacity-0 transition-opacity duration-300">
+                            <div class="inline-flex items-center px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-bold mb-4">CV Processing</div>
+                            <h3 class="text-2xl font-bold text-brand-900 mb-4">Contour Extraction</h3>
+                            <p class="text-brand-700 mb-6">
+                                OpenCV reads the binary mask (where white pixels = fish). It uses <code>cv2.findContours</code> to detect the shape and <code>cv2.boundingRect</code> to calculate the box coordinates (x, y, w, h).
+                            </p>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-black rounded aspect-video flex items-center justify-center relative">
+                                    <!-- Simple CSS representation of a mask -->
+                                    <div class="w-16 h-10 bg-white rounded-full"></div>
+                                </div>
+                                <div class="bg-white rounded border border-brand-200 aspect-video flex items-center justify-center relative">
+                                    <!-- Simple CSS representation of a bbox -->
+                                    <div class="w-16 h-10 border-2 border-green-500 rounded-full relative">
+                                        <div class="absolute -top-3 -right-3 bg-green-500 text-white text-[8px] px-1">fish</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Content for Step 3 -->
+                        <div id="pipeline-content-3" class="pipeline-detail hidden opacity-0 transition-opacity duration-300">
+                            <div class="inline-flex items-center px-3 py-1 rounded-full bg-brand-800 text-brand-100 text-xs font-bold mb-4">Final Output</div>
+                            <h3 class="text-2xl font-bold text-brand-900 mb-4">Normalization & Export</h3>
+                            <p class="text-brand-700 mb-6">
+                                Coordinates are normalized (0 to 1) relative to image size. The dataset is split (80% Train, 20% Val) and moved to a flat directory structure YOLOv8 expects.
+                            </p>
+                            <div class="bg-brand-900 text-brand-100 p-4 rounded-lg font-mono text-xs">
+                                # fish_123.txt<br>
+                                0 0.4532 0.3211 0.1500 0.2000
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Configuration Lab Section -->
+    <section id="config" class="py-20 bg-brand-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                
+                <!-- Controls -->
+                <div>
+                    <h2 class="text-3xl font-serif font-bold text-brand-900 mb-6">Configuration Lab</h2>
+                    <p class="text-brand-600 mb-8">
+                        The script exposes key parameters to tune the training process. Adjust the settings below to see how they impact model characteristics based on the standard YOLOv8 architecture.
+                    </p>
+
+                    <div class="space-y-6 bg-white p-6 rounded-xl border border-brand-200 shadow-sm">
+                        
+                        <!-- Model Selection -->
+                        <div>
+                            <label class="block text-sm font-bold text-brand-800 mb-2">Model Size (YOLOv8)</label>
+                            <div class="grid grid-cols-4 gap-2">
+                                <button class="model-btn active px-4 py-2 border border-brand-300 rounded hover:bg-brand-100 text-sm font-medium transition bg-brand-200 text-brand-900" data-model="n" onclick="selectModel('n', this)">Nano</button>
+                                <button class="model-btn px-4 py-2 border border-brand-300 rounded hover:bg-brand-100 text-sm font-medium transition text-brand-600" data-model="s" onclick="selectModel('s', this)">Small</button>
+                                <button class="model-btn px-4 py-2 border border-brand-300 rounded hover:bg-brand-100 text-sm font-medium transition text-brand-600" data-model="m" onclick="selectModel('m', this)">Med</button>
+                                <button class="model-btn px-4 py-2 border border-brand-300 rounded hover:bg-brand-100 text-sm font-medium transition text-brand-600" data-model="l" onclick="selectModel('l', this)">Large</button>
+                            </div>
+                        </div>
+
+                        <!-- Epochs Slider -->
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <label class="text-sm font-bold text-brand-800">Training Epochs</label>
+                                <span id="epoch-display" class="text-sm text-brand-600 font-mono">50</span>
+                            </div>
+                            <input type="range" min="10" max="100" value="50" step="10" class="w-full h-2 bg-brand-200 rounded-lg appearance-none cursor-pointer accent-brand-600" oninput="updateEpochs(this.value)">
+                        </div>
+
+                        <!-- Batch Size -->
+                        <div>
+                             <div class="flex justify-between mb-2">
+                                <label class="text-sm font-bold text-brand-800">Batch Size (GPU)</label>
+                                <span class="text-sm text-brand-600 font-mono">16</span>
+                            </div>
+                            <div class="w-full bg-brand-100 rounded-full h-2">
+                                <div class="bg-accent-blue h-2 rounded-full" style="width: 60%"></div>
+                            </div>
+                            <p class="text-xs text-brand-400 mt-1">Fixed at 16 for T4 GPU stability.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Radar Chart -->
+                <div>
+                    <div class="bg-white p-6 rounded-xl border border-brand-200 shadow-sm">
+                        <h3 class="text-sm font-bold text-brand-600 mb-4 text-center tracking-wider uppercase">Projected Performance Trade-offs</h3>
+                        <div class="chart-container">
+                            <canvas id="radarChart"></canvas>
+                        </div>
+                        <div class="mt-4 text-center text-xs text-brand-400">
+                            *Estimates based on COCO val data for YOLOv8 architecture.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Results Dashboard -->
+    <section id="results" class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-3xl font-serif font-bold text-brand-900 mb-10 text-center">Training Analytics & Results</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                <!-- Dataset Split Chart -->
+                <div class="bg-white p-6 rounded-xl border border-brand-100 shadow-sm">
+                    <h3 class="text-brand-800 font-bold mb-2">Dataset Split</h3>
+                    <p class="text-xs text-brand-500 mb-6">Total Images: ~27,400</p>
+                    <div class="chart-container" style="height: 250px;">
+                        <canvas id="splitChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Training Progress Chart -->
+                <div class="bg-white p-6 rounded-xl border border-brand-100 shadow-sm md:col-span-2">
+                    <h3 class="text-brand-800 font-bold mb-2">Training Performance (mAP@50)</h3>
+                    <p class="text-xs text-brand-500 mb-6">Simulated progression over 50 epochs using AdamW optimizer.</p>
+                    <div class="chart-container" style="height: 250px;">
+                        <canvas id="trainingChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Key Metrics Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
+                <div class="bg-brand-50 p-4 rounded-lg text-center border border-brand-200">
+                    <div class="text-xs text-brand-500 uppercase tracking-wider mb-1">mAP@50</div>
+                    <div class="text-2xl font-bold text-accent-blue">0.924</div>
+                </div>
+                <div class="bg-brand-50 p-4 rounded-lg text-center border border-brand-200">
+                    <div class="text-xs text-brand-500 uppercase tracking-wider mb-1">Precision</div>
+                    <div class="text-2xl font-bold text-brand-800">0.891</div>
+                </div>
+                <div class="bg-brand-50 p-4 rounded-lg text-center border border-brand-200">
+                    <div class="text-xs text-brand-500 uppercase tracking-wider mb-1">Recall</div>
+                    <div class="text-2xl font-bold text-brand-800">0.865</div>
+                </div>
+                <div class="bg-brand-50 p-4 rounded-lg text-center border border-brand-200">
+                    <div class="text-xs text-brand-500 uppercase tracking-wider mb-1">Speed (T4)</div>
+                    <div class="text-2xl font-bold text-accent-green">3.2ms</div>
+                </div>
+            </div>
+
+            <!-- Inference Code Block -->
+            <div class="bg-brand-900 rounded-xl overflow-hidden shadow-lg max-w-4xl mx-auto">
+                <div class="flex items-center justify-between px-6 py-3 bg-brand-800 border-b border-brand-700">
+                    <span class="text-brand-200 text-sm font-mono">Inference Code</span>
+                    <button onclick="copyCode()" class="text-brand-300 hover:text-white transition text-sm flex items-center gap-2">
+                        <i class="fa-regular fa-copy"></i> Copy
+                    </button>
+                </div>
+                <div class="p-6 overflow-x-auto">
+                    <pre class="font-mono text-sm text-brand-100 leading-relaxed"><code id="codeBlock">from ultralytics import YOLO
+
+# Load the best model weights from Google Drive
+MODEL_WEIGHTS = "/content/drive/MyDrive/yolo_training/fish_detect/weights/best.pt"
+trained_model = YOLO(MODEL_WEIGHTS)
+
+# Run inference
+results = trained_model.predict(
+    source='path/to/my_new_data.jpg',
+    conf=0.5,           # Confidence threshold
+    imgsz=416,          # Must match training size
+    save=True           # Save output image
+)</code></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Edge AI and AIoT Readiness Section (NEW) -->
+    <section id="edge-ai" class="py-20 bg-brand-50 border-t border-brand-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-serif font-bold text-brand-900 mb-4">AIoT and Edge Deployment Readiness</h2>
+                <p class="text-brand-600 max-w-4xl mx-auto">
+                    The choice of the YOLOv8 Nano (`yolov8n.pt`) architecture is specifically optimized for deployment on resource-constrained devices, making this solution perfect for AIoT applications like underwater drones or small monitoring stations.
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                
+                <!-- Card 1: Model Size -->
+                <div class="bg-white p-6 rounded-xl border border-brand-100 shadow-lg flex flex-col items-center text-center hover:shadow-xl transition">
+                    <i class="fa-solid fa-compress text-5xl text-accent-blue mb-4"></i>
+                    <h3 class="font-bold text-brand-800 text-xl mb-2">Minimal Size</h3>
+                    <p class="text-sm text-brand-600">
+                        YOLOv8 Nano has the smallest footprint (typically less than 7MB), allowing it to fit easily onto microcontrollers or small edge GPUs like Jetson Nano without requiring extensive storage.
+                    </p>
+                </div>
+
+                <!-- Card 2: Inference Speed -->
+                <div class="bg-white p-6 rounded-xl border border-brand-100 shadow-lg flex flex-col items-center text-center hover:shadow-xl transition">
+                    <i class="fa-solid fa-gauge-high text-5xl text-accent-green mb-4"></i>
+                    <h3 class="font-bold text-brand-800 text-xl mb-2">Real-time Performance</h3>
+                    <p class="text-sm text-brand-600">
+                        Achieving sub-10ms latency on many embedded platforms means the system can perform real-time fish tracking and classification without reliance on cloud processing.
+                    </p>
+                </div>
+
+                <!-- Card 3: Power Efficiency -->
+                <div class="bg-white p-6 rounded-xl border border-brand-100 shadow-lg flex flex-col items-center text-center hover:shadow-xl transition">
+                    <i class="fa-solid fa-battery-half text-5xl text-accent-red mb-4"></i>
+                    <h3 class="font-bold text-brand-800 text-xl mb-2">Low Power Draw</h3>
+                    <p class="text-sm text-brand-600">
+                        The streamlined model architecture minimizes computational cycles, leading to significantly lower power consumption—critical for battery-operated underwater devices.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Deployment Focus Text -->
+            <div class="mt-12 max-w-2xl mx-auto text-center p-6 bg-brand-100 rounded-lg border-l-4 border-accent-blue">
+                <p class="text-brand-700 font-medium">
+                    The core principle: process data *where* it is collected. By keeping the model small and fast (YOLOv8 Nano), we reduce data transmission needs and latency, making for a resilient and responsive AIoT ecosystem.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-brand-100 py-12 border-t border-brand-200 mt-12">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="text-brand-600 mb-2 font-serif font-bold">MARINA Plus</p>
+            <p class="text-sm text-brand-400">Created based on the YOLOv8 FISH DETECTION Project Report.</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // --- Navigation Logic ---
+        function scrollToSection(id) {
+            document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // --- Copy Code Logic ---
+        function copyCode() {
+            const code = document.getElementById('codeBlock').innerText;
+            const textArea = document.createElement('textarea');
+            textArea.value = code;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            alert('Code copied to clipboard!');
+            document.body.removeChild(textArea);
+        }
+
+        // --- Pipeline Explorer Logic ---
+        function updatePipeline(stepIndex) {
+            // Update Menu Active State
+            document.querySelectorAll('.pipeline-step').forEach((el, idx) => {
+                if(idx === stepIndex) {
+                    el.classList.add('active', 'bg-brand-50', 'border-brand-200');
+                    el.classList.remove('bg-white', 'border-brand-100');
+                } else {
+                    el.classList.remove('active', 'bg-brand-50', 'border-brand-200');
+                    el.classList.add('bg-white', 'border-brand-100');
+                }
+            });
+
+            // Update Content Visibility
+            document.querySelectorAll('.pipeline-detail').forEach((el, idx) => {
+                if(idx === stepIndex) {
+                    el.classList.remove('hidden', 'opacity-0');
+                } else {
+                    el.classList.add('hidden', 'opacity-0');
+                }
+            });
+        }
+
+        // --- Configuration Lab Logic (Radar Chart) ---
+        let radarChart;
+        const modelData = {
+            'n': { speed: 95, accuracy: 60, compute: 20 },
+            's': { speed: 80, accuracy: 75, compute: 40 },
+            'm': { speed: 60, accuracy: 85, compute: 65 },
+            'l': { speed: 40, accuracy: 95, compute: 90 }
+        };
+
+        function initRadarChart() {
+            const ctx = document.getElementById('radarChart').getContext('2d');
+            radarChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Inference Speed', 'Detection Accuracy', 'Compute Efficiency'],
+                    datasets: [{
+                        label: 'YOLOv8 Nano (Current)',
+                        data: [95, 60, 80], // compute efficiency is inverse of compute load
+                        backgroundColor: 'rgba(74, 124, 143, 0.2)', // Accent Blue
+                        borderColor: '#4a7c8f',
+                        pointBackgroundColor: '#4a7c8f',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#4a7c8f'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: '#e6e0d2' },
+                            grid: { color: '#e6e0d2' },
+                            pointLabels: {
+                                font: { family: 'Inter', size: 12 },
+                                color: '#5c4e36'
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 100,
+                            ticks: { display: false } // Hide numbers for cleaner look
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        function selectModel(model, btn) {
+            // Update Buttons
+            document.querySelectorAll('.model-btn').forEach(b => {
+                b.classList.remove('active', 'bg-brand-200', 'text-brand-900');
+                b.classList.add('text-brand-600');
+            });
+            btn.classList.add('active', 'bg-brand-200', 'text-brand-900');
+            btn.classList.remove('text-brand-600');
+
+            // Update Chart
+            const data = modelData[model];
+            const names = {'n': 'Nano', 's': 'Small', 'm': 'Medium', 'l': 'Large'};
+            
+            radarChart.data.datasets[0].label = `YOLOv8 ${names[model]}`;
+            // Map data: Speed is raw, Accuracy is raw, Efficiency is (100 - Compute Load)
+            radarChart.data.datasets[0].data = [data.speed, data.accuracy, 100 - data.compute];
+            radarChart.update();
+        }
+
+        function updateEpochs(val) {
+            document.getElementById('epoch-display').innerText = val;
+            // In a real app, this might update the simulated results chart below
+        }
+
+        // --- Performance Dashboard Charts ---
+        function initDashboardCharts() {
+            // 1. Split Chart (Doughnut)
+            const splitCtx = document.getElementById('splitChart').getContext('2d');
+            new Chart(splitCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Training (80%)', 'Validation (20%)'],
+                    datasets: [{
+                        data: [80, 20],
+                        backgroundColor: ['#4a7c8f', '#d5cbb0'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { usePointStyle: true, fontFamily: 'Inter' } }
+                    }
+                }
+            });
+
+            // 2. Training Chart (Line)
+            const trainCtx = document.getElementById('trainingChart').getContext('2d');
+            
+            // Generate simulated logarithmic growth curve for mAP
+            const epochs = Array.from({length: 50}, (_, i) => i + 1);
+            const mapData = epochs.map(e => {
+                // Logarithmic growth simulation: y = a + b * ln(x)
+                // Approximating reaching ~0.92 at epoch 50 from ~0.2 start
+                const val = 0.2 + (0.72 * Math.log(e) / Math.log(50));
+                return val + (Math.random() * 0.02 - 0.01); // Add slight noise
+            });
+
+            new Chart(trainCtx, {
+                type: 'line',
+                data: {
+                    labels: epochs.filter((e, i) => i % 5 === 0 || i === 49), // Show every 5th epoch
+                    datasets: [{
+                        label: 'mAP@50',
+                        data: mapData.filter((e, i) => i % 5 === 0 || i === 49),
+                        borderColor: '#5e8c61', // Accent Green
+                        backgroundColor: 'rgba(94, 140, 97, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#5e8c61'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 1.0,
+                            grid: { color: '#f4f1ea' },
+                            title: { display: true, text: 'mAP Score' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            title: { display: true, text: 'Epochs' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => `mAP: ${context.raw.toFixed(3)}`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- Initialization ---
+        window.addEventListener('DOMContentLoaded', () => {
+            initRadarChart();
+            initDashboardCharts();
+            // Trigger first step of pipeline active
+            updatePipeline(0);
+        });
+
+    </script>
+</body>
+</html>
