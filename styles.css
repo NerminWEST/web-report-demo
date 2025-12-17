@@ -1,4 +1,4 @@
-  * {
+* {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -68,122 +68,61 @@
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
         }
 
-      /* Modern white header box — affects header only */
-header .header-content {
-    background: #ffffff;
-    padding: 14px 32px;
+        header .header-content {
+            background: #ffffff;
+            padding: 14px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 92%;
+            margin: 15px auto;
+            border-radius: 18px;
+            box-shadow: 0 5px 18px rgba(0, 0, 0, 0.08);
+            backdrop-filter: blur(8px);
+            transition: box-shadow 0.3s ease, background 0.3s ease;
+        }
 
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+        header .logo-img {
+            height: 60px;
+            width: auto;
+            object-fit: contain;
+            display: block;
+        }
 
-    width: 92%;
-    margin: 15px auto;
+        header .logo-area:hover {
+            transform: translateY(-2px);
+            transition: transform 0.3s ease;
+        }
 
-    border-radius: 18px;
-    box-shadow: 0 5px 18px rgba(0, 0, 0, 0.08);
+        header nav ul {
+            display: flex;
+            gap: 26px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
 
-    backdrop-filter: blur(8px);
-    transition: box-shadow 0.3s ease, background 0.3s ease;
-}
+        header nav ul li a {
+            color: #222;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 15px;
+            position: relative;
+            transition: color 0.2s ease;
+        }
 
-/* Keep your logo clean and modern */
-header .logo-img {
-    height: 60px;
-    width: auto;
-    object-fit: contain;
-    display: block;
-}
+        header nav ul li a:hover {
+            color: #4a90e2;
+        }
 
-/* Slight hover animation for premium feel */
-header .logo-area:hover {
-    transform: translateY(-2px);
-    transition: transform 0.3s ease;
-}
-
-/* Navigation (kept same style, only softened) */
-header nav ul {
-    display: flex;
-    gap: 26px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-header nav ul li a {
-    color: #222;              /* nice modern dark text */
-    text-decoration: none;
-    font-weight: 500;
-    font-size: 15px;
-    position: relative;
-    transition: color 0.2s ease;
-}
-
-header nav ul li a:hover {
-    color: #4a90e2;   /* modern blue hover */
-}
-
-
+        header nav ul li a.active {
+            color: #4a90e2;
+            font-weight: 600;
+        }
 
         @keyframes shine {
             0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
             100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
-        }
-
-        .brand-title h1 {
-            font-size: 2rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .brand-title p {
-            color: var(--text-muted);
-            font-size: 0.9rem;
-            margin-top: 0.25rem;
-        }
-
-        nav ul {
-            list-style: none;
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        nav a {
-            color: var(--text-muted);
-            text-decoration: none;
-            font-weight: 600;
-            padding: 0.75rem 1.5rem;
-            border-radius: 12px;
-            transition: all 0.3s;
-            position: relative;
-        }
-
-        nav a::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border-radius: 12px;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        nav a span {
-            position: relative;
-            z-index: 1;
-        }
-
-        nav a:hover::before,
-        nav a.active::before {
-            opacity: 1;
-        }
-
-        nav a:hover,
-        nav a.active {
-            color: white;
         }
 
         /* Hero Section */
@@ -634,6 +573,17 @@ header nav ul li a:hover {
             font-size: 1.2rem;
         }
 
+        /* Spinning animation for in-progress status */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .spinning {
+            display: inline-block;
+            animation: spin 2s linear infinite;
+        }
+
         /* Footer */
         footer {
             background: rgba(21, 26, 48, 0.8);
@@ -700,4 +650,3 @@ header nav ul li a:hover {
                 transform: translateY(0);
             }
         }
-    
